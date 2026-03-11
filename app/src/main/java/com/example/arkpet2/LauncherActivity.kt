@@ -143,7 +143,7 @@ fun ArkPetApp(petDao: PetDao) {
 
     LaunchedEffect(Unit) {
         val dbPets = petDao.getAllPets()
-        pets = dbPets.map { it.toPet() }
+        pets = dbPets.toPetsWithRecords(petDao)
 
         if (dbPets.isEmpty()) {
             val defaultPets = listOf(
@@ -191,7 +191,7 @@ fun ArkPetApp(petDao: PetDao) {
             onAddPet = { newPet ->
                 scope.launch {
                     petDao.insertPet(newPet.toEntity())
-                    pets = petDao.getAllPets().map { it.toPet() }
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                     showAddForm = false
                 }
             },
@@ -199,7 +199,7 @@ fun ArkPetApp(petDao: PetDao) {
             onDeletePet = { petId ->
                 scope.launch {
                     petDao.deletePetById(petId)
-                    pets = petDao.getAllPets().map { it.toPet() }
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                     if (selectedPetId == petId) {
                         selectedPetId = null
                     }
@@ -216,113 +216,89 @@ fun ArkPetApp(petDao: PetDao) {
                 showEditForm = false
             },
             onSaveWeight = { value, unit, timeMillis ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(
-                            records = pet.records + WeightRecord(
-                                value = value,
-                                unit = unit,
-                                timeMillis = timeMillis
-                            )
+                scope.launch {
+                    petDao.insertWeightRecord(
+                        WeightRecordEntity(
+                            id = UUID.randomUUID().toString(),
+                            petId = selectedPet.id,
+                            value = value,
+                            unit = unit,
+                            timeMillis = timeMillis
                         )
-                    } else {
-                        pet
-                    }
+                    )
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onSaveFeed = { food, amount, note, timeMillis ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(
-                            feeds = pet.feeds + FeedRecord(
-                                food = food,
-                                amount = amount,
-                                note = note,
-                                timeMillis = timeMillis
-                            )
+                scope.launch {
+                    petDao.insertFeedRecord(
+                        FeedRecordEntity(
+                            id = UUID.randomUUID().toString(),
+                            petId = selectedPet.id,
+                            food = food,
+                            amount = amount,
+                            note = note,
+                            timeMillis = timeMillis
                         )
-                    } else {
-                        pet
-                    }
+                    )
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onDeleteFeed = { feedId ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(feeds = pet.feeds.filterNot { it.id == feedId })
-                    } else {
-                        pet
-                    }
+                scope.launch {
+                    petDao.deleteFeedRecordById(feedId)
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onSaveMedical = { hospital, diagnosis, treatment, note, timeMillis ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(
-                            medicals = pet.medicals + MedicalRecord(
-                                hospital = hospital,
-                                diagnosis = diagnosis,
-                                treatment = treatment,
-                                note = note,
-                                timeMillis = timeMillis
-                            )
+                scope.launch {
+                    petDao.insertMedicalRecord(
+                        MedicalRecordEntity(
+                            id = UUID.randomUUID().toString(),
+                            petId = selectedPet.id,
+                            hospital = hospital,
+                            diagnosis = diagnosis,
+                            treatment = treatment,
+                            note = note,
+                            timeMillis = timeMillis
                         )
-                    } else {
-                        pet
-                    }
+                    )
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onDeleteMedical = { medicalId ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(medicals = pet.medicals.filterNot { it.id == medicalId })
-                    } else {
-                        pet
-                    }
+                scope.launch {
+                    petDao.deleteMedicalRecordById(medicalId)
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onSaveMedication = { medicineName, dosage, frequency, days, note, timeMillis ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(
-                            medications = pet.medications + MedicationRecord(
-                                medicineName = medicineName,
-                                dosage = dosage,
-                                frequency = frequency,
-                                days = days,
-                                note = note,
-                                timeMillis = timeMillis
-                            )
+                scope.launch {
+                    petDao.insertMedicationRecord(
+                        MedicationRecordEntity(
+                            id = UUID.randomUUID().toString(),
+                            petId = selectedPet.id,
+                            medicineName = medicineName,
+                            dosage = dosage,
+                            frequency = frequency,
+                            days = days,
+                            note = note,
+                            timeMillis = timeMillis
                         )
-                    } else {
-                        pet
-                    }
+                    )
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onDeleteMedication = { medicationId ->
-                pets = pets.map { pet ->
-                    if (pet.id == selectedPet.id) {
-                        pet.copy(medications = pet.medications.filterNot { it.id == medicationId })
-                    } else {
-                        pet
-                    }
+                scope.launch {
+                    petDao.deleteMedicationRecordById(medicationId)
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                 }
             },
             onSaveEdit = { updatedPet ->
                 scope.launch {
                     petDao.insertPet(updatedPet.toEntity())
-                    pets = pets.map { pet ->
-                        if (pet.id == updatedPet.id) {
-                            updatedPet.copy(
-                                records = pet.records,
-                                feeds = pet.feeds,
-                                medicals = pet.medicals,
-                                medications = pet.medications
-                            )
-                        } else {
-                            pet
-                        }
-                    }
+                    pets = petDao.getAllPets().toPetsWithRecords(petDao)
                     showEditForm = false
                 }
             }
@@ -1456,4 +1432,46 @@ fun PetEntity.toPet(): Pet {
         note = note,
         avatarUri = avatarUri
     )
-} 
+}
+
+suspend fun List<PetEntity>.toPetsWithRecords(petDao: PetDao): List<Pet> {
+    return map { petEntity ->
+        petEntity.toPet().copy(
+            records = petDao.getWeightRecordsByPetId(petEntity.id).map { it.toModel() },
+            feeds = petDao.getFeedRecordsByPetId(petEntity.id).map { it.toModel() },
+            medicals = petDao.getMedicalRecordsByPetId(petEntity.id).map { it.toModel() },
+            medications = petDao.getMedicationRecordsByPetId(petEntity.id).map { it.toModel() }
+        )
+    }
+}
+
+fun WeightRecordEntity.toModel(): WeightRecord {
+    return WeightRecord(id = id, value = value, unit = unit, timeMillis = timeMillis)
+}
+
+fun FeedRecordEntity.toModel(): FeedRecord {
+    return FeedRecord(id = id, food = food, amount = amount, note = note, timeMillis = timeMillis)
+}
+
+fun MedicalRecordEntity.toModel(): MedicalRecord {
+    return MedicalRecord(
+        id = id,
+        hospital = hospital,
+        diagnosis = diagnosis,
+        treatment = treatment,
+        note = note,
+        timeMillis = timeMillis
+    )
+}
+
+fun MedicationRecordEntity.toModel(): MedicationRecord {
+    return MedicationRecord(
+        id = id,
+        medicineName = medicineName,
+        dosage = dosage,
+        frequency = frequency,
+        days = days,
+        note = note,
+        timeMillis = timeMillis
+    )
+}
